@@ -11,5 +11,5 @@ def read_puzzle(filename: str) -> Puzzle:
             for j, value_str in enumerate(line):
                 if value_str != "x":
                     puzzle[i, j].set_value(int(value_str))                    
-
+    puzzle.set_as_initial_state()
     return puzzle

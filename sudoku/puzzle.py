@@ -1,9 +1,10 @@
 from .cell import Cell
+from copy import deepcopy
 
 class Puzzle:
     def __init__(self):
         self._cells = [[Cell() for _ in range(9)] for _ in range(9)]
-
+        self._initial_state = None
     def print(self):
         for i in range(9):
             s = "".join([str(self._cells[i][j].value) if self._cells[i][j].value else "x" for j in range(9)])
@@ -33,3 +34,6 @@ class Puzzle:
             for col in range(9):
                 if len(self._cells[row][col].possible_values) == 1:
                     self._cells[row][col].value = next(iter(self._cells[row][col].possible_values))
+
+    def set_as_initial_state(self):
+        self._initial_state = deepcopy(self._cells)

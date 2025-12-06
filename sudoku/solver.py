@@ -67,7 +67,7 @@ def extract_cyclic_tiles(tiles: Tiles) -> tuple[Tiles, Tiles, Tiles]:
         tile.cell.possible_values -= set(known_values)
         if len(tile.cell.possible_values) == 1:
             new_value = next(iter(tile.cell.possible_values))
-            known_tiles.append(Tile(tile.position, Cell(value=new_value)))
+            known_tiles.append(Tile(tile.position, Cell(value=new_value, possible_values={new_value})))
         elif len(tile.cell.possible_values) > 1:
             remaining_unknown_tiles.append(tile)
 
@@ -92,7 +92,7 @@ def extract_cyclic_tiles(tiles: Tiles) -> tuple[Tiles, Tiles, Tiles]:
                 for t in remaining_tiles_raw:
                     new_possible_values = t.cell.possible_values - union
                     if len(new_possible_values) == 1:
-                        new_cell = Cell(value=next(iter(new_possible_values)))
+                        new_cell = Cell(value=next(iter(new_possible_values)), possible_values={next(iter(new_possible_values))})
                         known_tiles.append(Tile(position=t.position, cell=new_cell))
                     else:
                         new_cell = Cell(value=t.cell.value, possible_values=new_possible_values)
@@ -140,14 +140,10 @@ def step(puzzle: Puzzle) -> Puzzle:
         for tile in output:
             result[tile.position] = tile.cell
 
-    result.print()
     for col in generate_cols(result):
         output = reduce_possible_tiles(col)
         for tile in output:
             result[tile.position] = tile.cell
 
     result.update_single_possible_values()
-    print("-" * 20)
-    result.print()
-    print("-" * 20)
     return result

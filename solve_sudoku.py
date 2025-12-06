@@ -3,6 +3,7 @@ from typing_extensions import Annotated
 from sudoku.puzzle_file import read_puzzle
 import sudoku.solver
 from sudoku.solver import step, generate_sections
+from rich import print
 
 app = typer.Typer()
 
@@ -15,6 +16,7 @@ def main(puzzle_file: Annotated[str, typer.Argument(metavar="puzzle_file", help=
         Each character is either a digit from 1 to 9 or a dot (.) to represent an empty cell.
     """
     puzzle = read_puzzle(puzzle_file)
+    print("[green]Input Puzzle:[/green]\n")
     puzzle.print()
 
     print("-" * 20)
@@ -25,11 +27,11 @@ def main(puzzle_file: Annotated[str, typer.Argument(metavar="puzzle_file", help=
             break
         puzzle = new_puzzle
 
-    print("-" * 20)
+    print("[green]Solved Puzzle:[/green]\n")
     puzzle.print()
-    puzzle.print_unsolved_values()
-    puzzle.update_single_possible_values()
-    puzzle.print_unsolved_values()
+    #puzzle.print_unsolved_values()
+    #puzzle.update_single_possible_values()
+    #puzzle.print_unsolved_values()
     
 
 
