@@ -61,11 +61,21 @@ def extract_cyclic_tiles(tiles: Tiles) -> tuple[Tiles, Tiles, Tiles]:
     known_tiles = [tile for tile in tiles if tile.cell.value is not None]
 
     known_values = [tile.cell.value for tile in known_tiles]
+    
+    remaining_unknown_tiles = []
     for tile in unknown_tiles:
         tile.cell.possible_values -= set(known_values)
+        if len(tile.cell.possible_values) == 1:
+            new_value = next(iter(tile.cell.possible_values))
+            known_tiles.append(Tile(tile.position, Cell(value=new_value)))
+        elif len(tile.cell.possible_values) > 1:
+            remaining_unknown_tiles.append(tile)
+
+    if not remaining_unknown_tiles:
+        return known_tiles, [], []
 
     # Sort unknown tiles by the length of possible_values
-    sorted_tiles = sorted(unknown_tiles, key=lambda tile: len(tile.cell.possible_values))
+    sorted_tiles = sorted(remaining_unknown_tiles, key=lambda tile: len(tile.cell.possible_values))
 
     for i in range(2, len(sorted_tiles) + 1):
         from itertools import combinations
@@ -82,7 +92,7 @@ def extract_cyclic_tiles(tiles: Tiles) -> tuple[Tiles, Tiles, Tiles]:
                 for t in remaining_tiles_raw:
                     new_possible_values = t.cell.possible_values - union
                     if len(new_possible_values) == 1:
-                        new_cell = Cell(value=next(iter(new_possible_values)), possible_values=new_possible_values)
+                        new_cell = Cell(value=next(iter(new_possible_values)))
                         known_tiles.append(Tile(position=t.position, cell=new_cell))
                     else:
                         new_cell = Cell(value=t.cell.value, possible_values=new_possible_values)
@@ -91,7 +101,7 @@ def extract_cyclic_tiles(tiles: Tiles) -> tuple[Tiles, Tiles, Tiles]:
                 return known_tiles, cyclic_tiles, remaining_tiles
 
     # No cyclic group found, so all unknown tiles are considered "remaining"
-    return known_tiles, [], unknown_tiles
+    return known_tiles, [], sorted_tiles
 
 
 def reduce_possible_tiles(tiles: Tiles) -> Tiles:

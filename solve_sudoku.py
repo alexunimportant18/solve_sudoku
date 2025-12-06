@@ -26,7 +26,11 @@ def main(puzzle_file: Annotated[str, typer.Argument(metavar="puzzle_file", help=
         puzzle = new_puzzle
 
     print("-" * 20)
+    puzzle.print()
     puzzle.print_unsolved_values()
+    puzzle.update_single_possible_values()
+    puzzle.print_unsolved_values()
+    
 
 
 if __name__ == "__main__":
