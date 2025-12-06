@@ -1,14 +1,22 @@
 import typer
 from typing_extensions import Annotated
 from sudoku.puzzle_file import read_puzzle
-import sudoku.solver
-from sudoku.solver import step, generate_sections
+from sudoku.solver import try_solve_puzzle
 from rich import print
 
 app = typer.Typer()
 
+
 @app.command()
-def main(puzzle_file: Annotated[str, typer.Argument(metavar="puzzle_file", help="The path to the file containing the Sudoku puzzle.")]):   
+def main(
+    puzzle_file: Annotated[
+        str,
+        typer.Argument(
+            metavar="puzzle_file",
+            help="The path to the file containing the Sudoku puzzle.",
+        ),
+    ],
+):
     """
     Solve a Sudoku puzzle. The definition of the puzzle in in the given text file.
 
@@ -19,20 +27,43 @@ def main(puzzle_file: Annotated[str, typer.Argument(metavar="puzzle_file", help=
     print("[green]Input Puzzle:[/green]\n")
     puzzle.print()
 
-    print("-" * 20)
-    
-    while True:
-        new_puzzle = step(puzzle)
-        if new_puzzle == puzzle:
-            break
-        puzzle = new_puzzle
+    solved, puzzle, iteration = try_solve_puzzle(puzzle)
 
+    if not solved:
+        print(
+            "\nPuzzle is not solved by just removing cyclic cells, need to do trial-and-error"
+        )
+        # puzzle is not solved yet, pick one cell and assign a possible value and try to solve again
+        unsolved_cells = puzzle.get_unsolved_cells()
+        unsolved_cells.sort(key=lambda tile: len(tile.cell.possible_values))
+
+        if unsolved_cells:
+            try_cell = unsolved_cells[0]
+            original_puzzle = puzzle.copy()
+            for possible_value in iter(try_cell.cell.possible_values):
+                puzzle = original_puzzle.copy()
+                print(
+                    f"Try to assign value {possible_value} to cell ({try_cell.position})"
+                )
+                try_cell.cell.set_value(possible_value, {possible_value})
+                row, col = try_cell.position
+                puzzle[row, col] = try_cell.cell
+
+                solved, puzzle, iteration = try_solve_puzzle(puzzle, iteration + 1)
+                if solved:
+                    break
+                else:
+                    print(
+                        f"\nValue {possible_value} is not valid for cell ({try_cell.position}), try next value"
+                    )
+
+    # print the result
+    print()
     print("[green]Solved Puzzle:[/green]\n")
     puzzle.print()
-    #puzzle.print_unsolved_values()
-    #puzzle.update_single_possible_values()
-    #puzzle.print_unsolved_values()
-    
+    # puzzle.print_unsolved_values()
+    # puzzle.update_single_possible_values()
+    # puzzle.print_unsolved_values()
 
 
 if __name__ == "__main__":

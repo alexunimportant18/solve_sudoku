@@ -1,6 +1,6 @@
-import pytest
 from sudoku.puzzle import Puzzle
 from sudoku.cell import Cell
+
 
 def test_puzzle_initialization():
     puzzle = Puzzle()
@@ -10,6 +10,7 @@ def test_puzzle_initialization():
             assert isinstance(puzzle[i, j], Cell)
             assert puzzle[i, j].value is None
             assert puzzle[i, j].possible_values == set(range(1, 10))
+
 
 def test_puzzle_getitem_setitem():
     puzzle = Puzzle()
@@ -23,15 +24,17 @@ def test_puzzle_getitem_setitem():
     assert puzzle[8, 8] is cell2
     assert puzzle[8, 8].value == 9
 
+
 def test_puzzle_print(capsys):
     puzzle = Puzzle()
     puzzle[0, 1] = Cell(value=7)
     puzzle.print()
     captured = capsys.readouterr()
-    lines = captured.out.strip().split('\n')
-    assert lines[0] == 'x7xxxxxxx'
+    lines = captured.out.strip().split("\n")
+    assert lines[0] == "x7xxxxxxx"
     for i in range(1, 9):
-        assert lines[i] == 'x' * 9
+        assert lines[i] == "x" * 9
+
 
 def test_puzzle_eq():
     puzzle1 = Puzzle()
@@ -47,6 +50,7 @@ def test_puzzle_eq():
     puzzle2[0, 0] = Cell(value=2)
     assert puzzle1 != puzzle2
 
+
 def test_print_unsolved_values(capsys):
     puzzle = Puzzle()
     puzzle[0, 0] = Cell(value=1)
@@ -56,11 +60,13 @@ def test_print_unsolved_values(capsys):
     assert "Cell (0, 1) has possible values {2, 3}" in captured.out
     assert "Cell (0, 0)" not in captured.out
 
+
 def test_update_single_possible_values():
     puzzle = Puzzle()
     puzzle[0, 0].possible_values = {5}
     puzzle.update_single_possible_values()
     assert puzzle[0, 0].value == 5
+
 
 def test_set_as_initial_state():
     puzzle = Puzzle()

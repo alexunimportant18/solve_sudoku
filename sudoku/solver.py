@@ -1,10 +1,8 @@
 from .puzzle import Puzzle
 from .cell import Cell
-from typing import TypeAlias, Generator
-from collections import namedtuple
+from typing import Generator
+from .tile import Tile, Tiles
 
-Tile = namedtuple('Tile', ['position', 'cell'])
-Tiles: TypeAlias = list[Tile]
 
 def generate_sections(puzzle: Puzzle) -> Generator[Tiles, None, None]:
     section_x = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
@@ -18,6 +16,7 @@ def generate_sections(puzzle: Puzzle) -> Generator[Tiles, None, None]:
                 result.append(Tile((r, c), puzzle[r, c]))
         yield result
 
+
 def generate_rows(puzzle: Puzzle) -> Generator[Tiles, None, None]:
     for r in range(9):
         result = []
@@ -25,14 +24,13 @@ def generate_rows(puzzle: Puzzle) -> Generator[Tiles, None, None]:
             result.append(Tile((r, c), puzzle[r, c]))
         yield result
 
+
 def generate_cols(puzzle: Puzzle) -> Generator[Tiles, None, None]:
     for c in range(9):
         result = []
         for r in range(9):
             result.append(Tile((r, c), puzzle[r, c]))
         yield result
-
-
 
 
 def extract_cyclic_tiles(tiles: Tiles) -> tuple[Tiles, Tiles, Tiles]:
@@ -61,13 +59,15 @@ def extract_cyclic_tiles(tiles: Tiles) -> tuple[Tiles, Tiles, Tiles]:
     known_tiles = [tile for tile in tiles if tile.cell.value is not None]
 
     known_values = [tile.cell.value for tile in known_tiles]
-    
+
     remaining_unknown_tiles = []
     for tile in unknown_tiles:
         tile.cell.possible_values -= set(known_values)
         if len(tile.cell.possible_values) == 1:
             new_value = next(iter(tile.cell.possible_values))
-            known_tiles.append(Tile(tile.position, Cell(value=new_value, possible_values={new_value})))
+            known_tiles.append(
+                Tile(tile.position, Cell(value=new_value, possible_values={new_value}))
+            )
         elif len(tile.cell.possible_values) > 1:
             remaining_unknown_tiles.append(tile)
 
@@ -75,27 +75,37 @@ def extract_cyclic_tiles(tiles: Tiles) -> tuple[Tiles, Tiles, Tiles]:
         return known_tiles, [], []
 
     # Sort unknown tiles by the length of possible_values
-    sorted_tiles = sorted(remaining_unknown_tiles, key=lambda tile: len(tile.cell.possible_values))
+    sorted_tiles = sorted(
+        remaining_unknown_tiles, key=lambda tile: len(tile.cell.possible_values)
+    )
 
     for i in range(2, len(sorted_tiles) + 1):
         from itertools import combinations
+
         for group in combinations(sorted_tiles, i):
             union = set()
             for tile in group:
                 union.update(tile.cell.possible_values)
-            
+
             if len(union) == i:
                 cyclic_tiles = list(group)
-                remaining_tiles_raw = [tile for tile in sorted_tiles if tile not in cyclic_tiles]
-                
+                remaining_tiles_raw = [
+                    tile for tile in sorted_tiles if tile not in cyclic_tiles
+                ]
+
                 remaining_tiles = []
                 for t in remaining_tiles_raw:
                     new_possible_values = t.cell.possible_values - union
                     if len(new_possible_values) == 1:
-                        new_cell = Cell(value=next(iter(new_possible_values)), possible_values={next(iter(new_possible_values))})
+                        new_cell = Cell(
+                            value=next(iter(new_possible_values)),
+                            possible_values={next(iter(new_possible_values))},
+                        )
                         known_tiles.append(Tile(position=t.position, cell=new_cell))
                     else:
-                        new_cell = Cell(value=t.cell.value, possible_values=new_possible_values)
+                        new_cell = Cell(
+                            value=t.cell.value, possible_values=new_possible_values
+                        )
                         remaining_tiles.append(Tile(position=t.position, cell=new_cell))
 
                 return known_tiles, cyclic_tiles, remaining_tiles
@@ -117,7 +127,9 @@ def reduce_possible_tiles(tiles: Tiles) -> Tiles:
     result = []
     processing_tiles = tiles
     while True:
-        known_tiles, cyclic_tiles, remaining_tiles = extract_cyclic_tiles(processing_tiles)
+        known_tiles, cyclic_tiles, remaining_tiles = extract_cyclic_tiles(
+            processing_tiles
+        )
         result.extend(known_tiles)
         result.extend(cyclic_tiles)
         if not cyclic_tiles:
@@ -147,3 +159,24 @@ def step(puzzle: Puzzle) -> Puzzle:
 
     result.update_single_possible_values()
     return result
+
+
+def try_solve_puzzle(puzzle: Puzzle, iteration_from=1) -> tuple[bool, Puzzle]:
+    iteration = iteration_from
+    while True:
+        print(f"\n[green]Iteration {iteration}[/green]:\n")
+        new_puzzle = step(puzzle)
+        new_puzzle.print()
+
+        if new_puzzle.is_solved():
+            break
+        if new_puzzle == puzzle:
+            break
+
+        puzzle = new_puzzle
+        iteration += 1
+
+    if new_puzzle.is_solved():
+        return True, new_puzzle, iteration
+    else:
+        return False, new_puzzle, iteration
