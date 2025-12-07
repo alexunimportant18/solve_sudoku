@@ -1,0 +1,16 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+examples/
+
+# Virtual environments
+.venv
+.marscode/deviceInfo.json
+tests/.marscode/deviceInfo.json
+.vscode
+.ipynb_checkpoints
+
