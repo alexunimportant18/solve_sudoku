@@ -1,7 +1,7 @@
 import typer
 from typing_extensions import Annotated
 from sudoku.puzzle_file import read_puzzle
-from sudoku.solver import try_solve_puzzle
+from sudoku.solver import try_solve_puzzle, SolverResult
 from rich import print
 
 app = typer.Typer()
@@ -29,15 +29,15 @@ def main(
 
     solved, puzzle, iteration = try_solve_puzzle(puzzle)
 
-    if not solved:
+    while solved == SolverResult.UNSOLVED:
         print(
             "\nPuzzle is not solved by just removing cyclic cells, need to do trial-and-error"
         )
         # puzzle is not solved yet, pick one cell and assign a possible value and try to solve again
         unsolved_cells = puzzle.get_unsolved_cells()
-        unsolved_cells.sort(key=lambda tile: len(tile.cell.possible_values))
-
         if unsolved_cells:
+            unsolved_cells.sort(key=lambda tile: len(tile.cell.possible_values))
+
             try_cell = unsolved_cells[0]
             original_puzzle = puzzle.copy()
             for possible_value in iter(try_cell.cell.possible_values):
@@ -50,12 +50,26 @@ def main(
                 puzzle[row, col] = try_cell.cell
 
                 solved, puzzle, iteration = try_solve_puzzle(puzzle, iteration + 1)
-                if solved:
+                if solved == SolverResult.SOLVED or solved == SolverResult.UNSOLVED:
                     break
                 else:
                     print(
                         f"\nValue {possible_value} is not valid for cell ({try_cell.position}), try next value"
                     )
+
+            # consumed all of the possible values
+            if solved == SolverResult.SOLVED:
+                break
+            if solved == SolverResult.FAILURE:
+                print(
+                    f"\nFailed to solve the puzzle after trying all possible values for cell ({try_cell.position})"
+                )
+                break
+            if solved == SolverResult.UNSOLVED:
+                print(f"\nPuzzle is not solved yet, try to fill in value of another cell")
+                continue
+
+        
 
     # print the result
     print()

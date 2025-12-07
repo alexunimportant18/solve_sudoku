@@ -2,36 +2,13 @@ from .puzzle import Puzzle
 from .cell import Cell
 from typing import Generator
 from .tile import Tile, Tiles
+from rich import print
+from enum import Enum
 
-
-def generate_sections(puzzle: Puzzle) -> Generator[Tiles, None, None]:
-    section_x = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
-    section_y = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
-    for i in range(9):
-        result = []
-        row = i // 3
-        col = i - row * 3
-        for r in section_x[row]:
-            for c in section_y[col]:
-                result.append(Tile((r, c), puzzle[r, c]))
-        yield result
-
-
-def generate_rows(puzzle: Puzzle) -> Generator[Tiles, None, None]:
-    for r in range(9):
-        result = []
-        for c in range(9):
-            result.append(Tile((r, c), puzzle[r, c]))
-        yield result
-
-
-def generate_cols(puzzle: Puzzle) -> Generator[Tiles, None, None]:
-    for c in range(9):
-        result = []
-        for r in range(9):
-            result.append(Tile((r, c), puzzle[r, c]))
-        yield result
-
+class SolverResult(Enum):
+    SOLVED = 1
+    UNSOLVED = 2
+    FAILURE = 3
 
 def extract_cyclic_tiles(tiles: Tiles) -> tuple[Tiles, Tiles, Tiles]:
     """
@@ -142,17 +119,17 @@ def reduce_possible_tiles(tiles: Tiles) -> Tiles:
 
 def step(puzzle: Puzzle) -> Puzzle:
     result = Puzzle()
-    for section in generate_sections(puzzle):
+    for section in puzzle.sections():
         output = reduce_possible_tiles(section)
         for tile in output:
             result[tile.position] = tile.cell
 
-    for row in generate_rows(result):
+    for row in result.rows():
         output = reduce_possible_tiles(row)
         for tile in output:
             result[tile.position] = tile.cell
 
-    for col in generate_cols(result):
+    for col in result.cols():
         output = reduce_possible_tiles(col)
         for tile in output:
             result[tile.position] = tile.cell
@@ -161,7 +138,21 @@ def step(puzzle: Puzzle) -> Puzzle:
     return result
 
 
-def try_solve_puzzle(puzzle: Puzzle, iteration_from=1) -> tuple[bool, Puzzle]:
+def try_solve_puzzle(puzzle: Puzzle, iteration_from=1) -> tuple[SolverResult, Puzzle, int]:
+    """
+    Solves a Sudoku puzzle using a step-by-step approach.
+
+    Args:
+        puzzle: The Sudoku puzzle to be solved.
+        iteration_from: The iteration number to start from (default is 1).
+
+    Returns:
+        A tuple containing three elements:
+        - A boolean indicating whether the puzzle was solved successfully.
+        - The solved puzzle.
+        - The number of iterations performed since iteration_from.
+    """
+        
     iteration = iteration_from
     while True:
         print(f"\n[green]Iteration {iteration}[/green]:\n")
@@ -177,6 +168,9 @@ def try_solve_puzzle(puzzle: Puzzle, iteration_from=1) -> tuple[bool, Puzzle]:
         iteration += 1
 
     if new_puzzle.is_solved():
-        return True, new_puzzle, iteration
+        return SolverResult.SOLVED, new_puzzle, iteration
     else:
-        return False, new_puzzle, iteration
+        if not new_puzzle.is_valid():
+            return SolverResult.FAILURE, new_puzzle, iteration
+        else:
+            return SolverResult.UNSOLVED, new_puzzle, iteration

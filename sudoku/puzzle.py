@@ -1,7 +1,7 @@
 from .cell import Cell
 from copy import deepcopy
 from .tile import Tile, Tiles
-
+from typing import Generator
 
 class Puzzle:
     def __init__(self):
@@ -44,6 +44,35 @@ class Puzzle:
                     return False
         return True
 
+    def sections(self) -> Generator[Tiles, None, None]:
+        section_x = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
+        section_y = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
+        for i in range(9):
+            result = []
+            row = i // 3
+            col = i - row * 3
+            for r in section_x[row]:
+                for c in section_y[col]:
+                    result.append(Tile((r, c), self._cells[r][c]))
+            yield result        
+
+    def rows(self) -> Generator[Tiles, None, None]:
+        for r in range(9):
+            result = []
+            for c in range(9):
+                result.append(Tile((r, c), self._cells[r][c]))
+            yield result
+
+    def cols(self) -> Generator[Tiles, None, None]:
+        for c in range(9):
+            result = []
+            for r in range(9):
+                result.append(Tile((r, c), self._cells[r][c]))
+            yield result
+
+    def copy(self):
+        return deepcopy(self)
+
     def print_unsolved_values(self):
         for row in range(9):
             for col in range(9):
@@ -75,5 +104,19 @@ class Puzzle:
                     return False
         return True
 
-    def copy(self):
-        return deepcopy(self)
+    def _is_valid_group(self, tiles: Tiles) -> bool:
+        values = [tile.cell.value for tile in tiles if tile.cell.value is not None]
+        return len(values) == len(set(values))
+        
+    def is_valid(self) -> bool:
+        for section in self.sections():
+            if not self._is_valid_group(section):
+                return False
+        for row in self.rows():
+            if not self._is_valid_group(row):
+                return False
+        for col in self.cols():
+            if not self._is_valid_group(col):
+                return False
+        return True
+
