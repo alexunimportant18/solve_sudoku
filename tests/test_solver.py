@@ -2,13 +2,12 @@ import pytest
 from sudoku.puzzle import Puzzle
 from sudoku.cell import Cell
 from sudoku.solver import (
-    generate_sections,
-    generate_rows,
-    generate_cols,
     extract_cyclic_tiles,
     reduce_possible_tiles,
     step,
     Tile,
+    try_solve_puzzle,
+    SolverResult
 )
 
 
@@ -27,7 +26,7 @@ def simple_puzzle():
 
 
 def test_generate_sections(empty_puzzle):
-    sections = list(generate_sections(empty_puzzle))
+    sections = list(empty_puzzle.sections())
     assert len(sections) == 9
     for section in sections:
         assert len(section) == 9
@@ -36,7 +35,7 @@ def test_generate_sections(empty_puzzle):
 
 
 def test_generate_rows(empty_puzzle):
-    rows = list(generate_rows(empty_puzzle))
+    rows = list(empty_puzzle.rows())
     assert len(rows) == 9
     for i, row in enumerate(rows):
         assert len(row) == 9
@@ -45,7 +44,7 @@ def test_generate_rows(empty_puzzle):
 
 
 def test_generate_cols(empty_puzzle):
-    cols = list(generate_cols(empty_puzzle))
+    cols = list(empty_puzzle.cols())
     assert len(cols) == 9
     for i, col in enumerate(cols):
         assert len(col) == 9
@@ -138,3 +137,44 @@ def test_step(simple_puzzle):
     new_puzzle = step(simple_puzzle)
     # Check that some possibilities have been reduced
     assert len(new_puzzle[0, 2].possible_values) < 9
+
+
+def test_try_solve_puzzle():
+    puzzle = Puzzle()
+    # A simple puzzle that can be solved in one step
+    for i in range(8):
+        puzzle[i, i] = Cell(value=i + 1)
+
+    result, solved_puzzle, iterations = try_solve_puzzle(puzzle)
+
+    assert result == SolverResult.UNSOLVED
+    assert not solved_puzzle.is_solved()
+    assert solved_puzzle.is_valid()
+    # This simple puzzle should be solved in a few iterations
+    assert iterations > 0
+    assert iterations < 20
+
+    # Test for an unsolvable puzzle
+    puzzle = Puzzle()
+    puzzle[0, 0] = Cell(value=1)
+    puzzle[0, 1] = Cell(value=1)
+    result, failed_puzzle, iterations = try_solve_puzzle(puzzle)
+    assert result == SolverResult.FAILURE
+
+    # Test for a puzzle that is not solved but is valid
+    puzzle = Puzzle()
+    # A puzzle that is valid but not solved after initial steps
+    puzzle[0,0] = Cell(value=1)
+    puzzle[1,1] = Cell(value=2)
+    puzzle[2,2] = Cell(value=3)
+    puzzle[3,3] = Cell(value=4)
+    puzzle[4,4] = Cell(value=5)
+    puzzle[5,5] = Cell(value=6)
+    puzzle[6,6] = Cell(value=7)
+    puzzle[7,7] = Cell(value=8)
+    # no value for [8,8]
+    
+    result, unsolved_puzzle, iterations = try_solve_puzzle(puzzle)
+    assert result == SolverResult.UNSOLVED
+    assert not unsolved_puzzle.is_solved()
+    assert unsolved_puzzle.is_valid()

@@ -7,7 +7,7 @@ class Puzzle:
     def __init__(self):
         self._cells = [[Cell() for _ in range(9)] for _ in range(9)]
 
-    def print(self):
+    def print(self):  # pragma: no cover
         for i in range(9):
             # Build the row string with spaces between cells
             row_parts = []
@@ -119,4 +119,3 @@ class Puzzle:
             if not self._is_valid_group(col):
                 return False
         return True
-
